@@ -1,3 +1,9 @@
+# 0.31.3 (2026-09-28)
+
+#### Added
+
+- **Turn-end questions appear as a derived blocked state.** When a Claude Stop or Codex turn-complete message ends with a paragraph containing `?`, an attached brief that is not already blocked appears blocked in the inbox and brief view. The paragraph is shown as the ask; the brief file is unchanged. Each hit is logged for review.
+
 # 0.31.2 (2026-09-28)
 
 #### Fixed
@@ -16,7 +22,6 @@
 
 - **Codex lemons get their messages without arming a waiter.** A delivery service queues each pending message into the recipient's Codex thread and moves it to `done/` only once `codex queue` succeeds, retrying failures. `tell` starts it, as does a Codex turn ending with mail pending; it runs detached, one at a time, and exits after two idle minutes. `lemonaid inbox deliver` runs it in the foreground.
 - **An optional Stop hook keeps each Claude lemon's inbox waiter armed.** `lemonaid claude hooks --waiter-check` installs `lemonaid claude waiter-check`, which blocks a lemon with a brief from ending its turn while no `inbox watch --self` is running for it. A second watch for the same lemon now exits with an error.
-
 # 0.30.0 (2026-09-25)
 
 #### Changed

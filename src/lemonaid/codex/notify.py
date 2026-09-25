@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .. import messages
+from ..brief import turn_end_question
 from ..inbox import db
 from ..inbox.channel import UnidentifiedSession, full_channel_id
 from ..lemon_watchers import (
@@ -202,6 +203,12 @@ def handle_notification(
 
     # Add to inbox (upsert=True by default, so repeated notifications update timestamp)
     with db.connect() as conn:
+        if notification_type in ("agent-turn-complete", "turn-complete"):
+            final_message = data.get("last-assistant-message")
+            if isinstance(final_message, str):
+                message = (
+                    turn_end_question.add_ask(conn, channel, final_message, metadata) or message
+                )
         db.add(
             conn,
             channel=channel,
