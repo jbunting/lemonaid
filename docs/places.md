@@ -39,6 +39,18 @@ it through without interpreting it. `{dir}` is an absolute path.
 The commands run through a shell, so pipelines work. They come from your own config file,
 which is the same trust level as your shell rc.
 
+A root also names the project its places belong to, which brief cards show on their first
+line. That's the root's directory name unless you set `name`, which helps when the
+directory is named for its layout:
+
+```toml
+[[places.roots]]
+path = "~/play/lemonaid-wt"
+name = "lemonaid"
+```
+
+A session outside every root is named for its own directory.
+
 ### The protocol is lines
 
 `list` emits one absolute path per line (optionally `path<TAB>label`); `inspect` emits one
