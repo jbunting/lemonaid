@@ -1,3 +1,9 @@
+# 0.54.1 (2026-10-01)
+
+#### Fixed
+
+- **The one-call Codex edit shown in the watch-doc skill and docs no longer records a failed patch as the lemon's own edit.** `--mine` now sits on the `apply_patch` line after `&&`, so it runs only when the patch succeeds. An `--editing` older than 10 minutes no longer pairs with a later `--mine`, so one left behind by a failed patch can't cover someone else's edit.
+
 # 0.54.0 (2026-10-01)
 
 #### Added

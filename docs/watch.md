@@ -46,13 +46,12 @@ Codex can do all three in one shell call. `apply_patch` works as a shell command
 compound command (checked with codex-cli 0.159.2, in the workspace-write sandbox):
 
 ```sh
-lemonaid watch doc --editing <doc> && apply_patch <<'PATCH'
+lemonaid watch doc --editing <doc> && apply_patch <<'PATCH' && lemonaid watch doc --mine <doc>
 *** Begin Patch
 *** Update File: <doc>
 ...
 *** End Patch
 PATCH
-lemonaid watch doc --mine <doc>
 ```
 
 The waiter replays the session's unconsumed edits in order from the body it last reported,

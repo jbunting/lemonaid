@@ -15,16 +15,18 @@ Layout, under `<state dir>/own/<writer>/`:
 - `<doc key>.doc`: the doc's resolved path; a waiter writes it, and the hook records
   edits only to docs that have one
 - `<doc key>.edits`: one `<seq> <before> <after>` transition per line, oldest first
-- `pending/<key>`: the before digest, until the edit's after side is recorded
+- `pending/<key>`: the before digest, until the edit's after side is recorded (at most 10 minutes)
 """
 
 import hashlib
 import pathlib
+import time
 from collections import abc
 
 from . import relay_comments
 
 _KEEP = 50
+_PENDING_MAX_AGE = 600.0  # seconds; an --editing whose edit failed must not pair with a later one
 
 
 def claude_writer(session_id: str) -> str:
@@ -119,10 +121,14 @@ def after_edit(state_dir: pathlib.Path, writer: str, key: str, doc: pathlib.Path
     path = _pending(state_dir, writer, key)
     try:
         before = path.read_text().strip()
+        fresh = time.time() - path.stat().st_mtime < _PENDING_MAX_AGE
     except FileNotFoundError:
         return False
 
     path.unlink()
+    if not fresh:
+        return False
+
     _append(_edits_path(state_dir, writer, doc), before, _file_digest(doc))
     return True
 

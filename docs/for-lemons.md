@@ -618,13 +618,12 @@ installed. For an edit made any other way (Codex, or a Claude edit through Bash)
 after. Codex does all three in one shell call:
 
 ```sh
-lemonaid watch doc --editing <doc> && apply_patch <<'PATCH'
+lemonaid watch doc --editing <doc> && apply_patch <<'PATCH' && lemonaid watch doc --mine <doc>
 *** Begin Patch
 *** Update File: <doc>
 ...
 *** End Patch
 PATCH
-lemonaid watch doc --mine <doc>
 ```
 
 Edits by anyone else, another lemon's included, still wake you. Details: [watch.md](watch.md#ignoring-the-lemons-own-edits).

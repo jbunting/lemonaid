@@ -68,7 +68,7 @@ To find unanswered threads by hand, `rg -o 'author="[^"]*">>' <doc-path>` lists 
 Make every edit to a watched doc's body one shell call that records it (a reply alone changes no body, so it needs none):
 
 ```sh
-lemonaid watch doc --editing <absolute-doc-path> && apply_patch <<'PATCH'
+lemonaid watch doc --editing <absolute-doc-path> && apply_patch <<'PATCH' && lemonaid watch doc --mine <absolute-doc-path>
 *** Begin Patch
 *** Update File: <absolute-doc-path>
 @@
@@ -76,7 +76,6 @@ lemonaid watch doc --editing <absolute-doc-path> && apply_patch <<'PATCH'
 +<new line>
 *** End Patch
 PATCH
-lemonaid watch doc --mine <absolute-doc-path>
 ```
 
 A doc outside your workspace needs the same escalated permissions as any other edit there.

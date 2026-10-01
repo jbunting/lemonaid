@@ -1,5 +1,8 @@
 """A waiter is not woken by its own lemon's body edits, and is woken by everyone else's."""
 
+import os
+import time
+
 import pytest
 
 from lemonaid.claude import own_edit
@@ -193,3 +196,15 @@ def test_chain_to_needs_every_new_transition_in_order():
     assert own_edits.chain_to([(1, "a", "b"), (2, "b", "a")], 0, "a", "b") is None
     assert own_edits.chain_to([(1, "z", "a"), (2, "a", "b")], 1, "a", "b") == 2
     assert own_edits.chain_to([], 0, "a", "a") is None
+
+
+def test_a_stale_editing_does_not_pair_with_a_later_mine(doc, state_dir):
+    """An --editing whose patch failed is not the start of an edit made much later."""
+    w = _watch(state_dir, doc, "codex-thread")
+    own_edits.before_edit(state_dir, "codex-thread", own_edits.cli_key(doc), doc)
+    pending = own_edits.writer_dir(state_dir, "codex-thread") / "pending" / own_edits.cli_key(doc)
+    os.utime(pending, (time.time() - 3600, time.time() - 3600))
+    doc.write_text(doc.read_text() + "Peter's, much later.\n")
+
+    assert not own_edits.after_edit(state_dir, "codex-thread", own_edits.cli_key(doc), doc)
+    assert len(_poll_twice(w)) == 1
