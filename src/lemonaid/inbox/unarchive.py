@@ -2,7 +2,7 @@
 
 The watcher archives on evidence gathered from outside a session, and that
 evidence can be wrong. History uses the same two checks the watcher archives
-on, a pane on the recorded tty and the harness process running there, to
+on, a pane on the session's tty and the harness process running there, to
 decide whether Enter should switch to a session or resume it.
 """
 
@@ -10,6 +10,7 @@ import sqlite3
 import time
 from collections import abc
 
+from .. import handlers
 from ..handlers import check_pane_exists_by_tty
 from ..lemon_watchers import watcher
 from . import db
@@ -19,8 +20,17 @@ def running(n: db.Notification) -> bool:
     """Whether `n`'s pane and harness process are still on its recorded tty.
 
     Asked of the tmux server the session was recorded on, and a pane in a tmux
-    session younger than the record does not count, since ttys are reused.
+    session younger than the record does not count, since ttys are reused. A
+    session that can outlive its tty (a cmux one, which cmux resumes on a new tty
+    after a restart) is asked of its backend where it runs now instead.
     """
+    harness = watcher.harness_process(n.channel)
+    if n.switch_source in handlers.PER_SESSION_SOURCES:
+        now = handlers.where_sessions_are(
+            [(n.switch_source, {**n.metadata, "channel": n.channel})], fresh=True
+        ).get(n.channel)
+        return bool(now) and watcher.is_process_running_on_tty(now, harness)
+
     tty = n.metadata.get("tty")
     if not tty or not n.switch_source:
         return False
@@ -28,9 +38,7 @@ def running(n: db.Notification) -> bool:
     pane = check_pane_exists_by_tty(
         tty, n.switch_source, n.metadata.get("tmux_socket"), n.created_at
     )
-    return pane is True and watcher.is_process_running_on_tty(
-        tty, watcher.harness_process(n.channel)
-    )
+    return pane is True and watcher.is_process_running_on_tty(tty, harness)
 
 
 def restore(conn: sqlite3.Connection, channel: str) -> int:

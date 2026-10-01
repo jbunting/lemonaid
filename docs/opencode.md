@@ -77,4 +77,4 @@ lemonaid opencode dismiss --session-id ses_abc123
 
 - Channel format: `opencode:<full_session_id>`
 - Resume command from history: `opencode --session <session_id>`
-- Notifications include terminal metadata when available for tmux/wezterm switching
+- Notifications include terminal metadata when available for tmux/wezterm/cmux switching

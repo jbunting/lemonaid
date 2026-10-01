@@ -34,6 +34,7 @@ from ..inbox import db
 from ..inbox.channel import UnidentifiedSession, channel_id
 from ..lemon_watchers import (
     detect_terminal_switch_source,
+    get_cmux_surface,
     get_git_branch,
     get_name_from_cwd,
     get_tmux_session_name,
@@ -259,6 +260,9 @@ def _resolve_session(data: dict, notification_type: str) -> tuple[str, str, str,
     tty = get_tty()  # for pane matching
     if tty:
         metadata["tty"] = tty
+        surface = get_cmux_surface()
+        if surface:
+            metadata["cmux_surface"] = surface
 
     # Where this session sits, so a lost tmux server can be rebuilt from the
     # inbox. Absent when the hook runs outside tmux, which is why `db.add`

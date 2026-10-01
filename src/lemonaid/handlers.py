@@ -2,14 +2,19 @@
 
 import json
 import subprocess
-from typing import Any
+from typing import Any, Literal
 
-from . import tmux, wezterm
+from . import cmux, tmux, wezterm
 from .config import Config, load_config
 from .lemon_watchers import watcher
 from .log import get_logger
 
 _log = get_logger("handlers")
+
+
+# Switch sources whose sessions can outlive their tty, so the watcher asks them
+# where each session is rather than whether its recorded tty is still there.
+PER_SESSION_SOURCES = frozenset({"cmux"})
 
 
 def check_pane_exists_by_tty(
@@ -40,6 +45,10 @@ def check_pane_exists_by_tty(
         workspace, pane_id = _resolve_pane_from_tty(tty)
         return workspace is not None and pane_id is not None
 
+    elif switch_source in PER_SESSION_SOURCES:
+        # Its tty alone cannot say; ask `where_sessions_are` instead.
+        return None
+
     return False
 
 
@@ -54,6 +63,7 @@ def handle_notification(
     The switch_source determines which built-in handler to use:
     - "tmux" -> use tmux switch-handler
     - "wezterm" -> use wezterm switch-handler
+    - "cmux" -> use cmux switch-handler
 
     Returns True if handled successfully, False otherwise.
     """
@@ -64,8 +74,59 @@ def handle_notification(
         return _handle_tmux(metadata, config)
     elif switch_source == "wezterm":
         return _handle_wezterm(metadata, config)
+    elif switch_source == "cmux":
+        return _handle_cmux(metadata, config)
 
     return False
+
+
+def _handle_cmux(metadata: dict[str, Any] | None, config: Config) -> bool:
+    """Handle notification by focusing its cmux surface, or resuming a session that has none."""
+    if metadata is None:
+        return False
+
+    try:
+        target = cmux.navigation.locate(metadata, _cmux_runs_harness)
+    except cmux.navigation.CmuxUnavailable:
+        return False
+
+    channel = metadata.get("channel")
+    if target == cmux.navigation.UNKNOWN:
+        # Either answer could be wrong: a switch may land on a stranger, and a
+        # recreate may start a second copy of a live session.
+        _log.warning("not switching to %s: could not tell which surface runs it", channel)
+        return False
+
+    if target == cmux.navigation.AMBIGUOUS:
+        # Recreating would add a third copy of a session that already has two.
+        _log.warning("not switching to %s: several surfaces run it", channel)
+        return False
+
+    if target is None:
+        return cmux.recreate.recreate(metadata, config)
+
+    return cmux.navigation.switch_to_surface(target)
+
+
+def _cmux_runs_harness(metadata: dict[str, Any], tty: str) -> bool | None:
+    return watcher.process_on_tty(tty, watcher.harness_process(metadata.get("channel", "")))
+
+
+def where_sessions_are(
+    sessions: list[tuple[str | None, dict[str, Any]]], fresh: bool = False
+) -> dict[str, str | Literal[False] | None]:
+    """For each (switch_source, metadata) of a PER_SESSION_SOURCES session, keyed by channel:
+    the tty it runs on now, False if it is gone, or None if that could not be told.
+
+    *metadata* carries the row's `channel`. Sessions of other sources are left out.
+    *fresh* asks the backend not to answer from anything it remembers, for a
+    decision a person is waiting on rather than a watcher tick.
+    """
+    in_cmux = [metadata for source, metadata in sessions if source == "cmux"]
+    if not in_cmux:
+        return {}
+
+    return cmux.navigation.where(in_cmux, _cmux_runs_harness, reuse_sweep=not fresh)
 
 
 def _handle_wezterm(metadata: dict[str, Any] | None, config: Config) -> bool:

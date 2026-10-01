@@ -15,6 +15,7 @@ from ..inbox import db
 from ..inbox.channel import UnidentifiedSession, channel_id
 from ..lemon_watchers import (
     detect_terminal_switch_source,
+    get_cmux_surface,
     get_git_branch,
     get_name_from_cwd,
     get_tty,
@@ -158,6 +159,9 @@ def handle_notification(
     tty = get_tty()
     if tty:
         metadata["tty"] = tty
+        surface = get_cmux_surface()
+        if surface:
+            metadata["cmux_surface"] = surface
 
     try:
         channel = channel_id("openclaw", session_id)
@@ -309,6 +313,9 @@ def handle_register(session_id: str | None = None, cwd: str | None = None) -> bo
             metadata["session_key"] = session_key
     if tty:
         metadata["tty"] = tty
+        surface = get_cmux_surface()
+        if surface:
+            metadata["cmux_surface"] = surface
 
     branch = get_git_branch(cwd)
     if branch:

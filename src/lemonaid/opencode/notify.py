@@ -10,6 +10,7 @@ from ..inbox import db
 from ..inbox.channel import UnidentifiedSession
 from ..lemon_watchers import (
     detect_terminal_switch_source,
+    get_cmux_surface,
     get_git_branch,
     get_name_from_cwd,
     get_tty,
@@ -168,6 +169,9 @@ def handle_notification(
     tty = get_tty()
     if tty:
         metadata["tty"] = tty
+        surface = get_cmux_surface()
+        if surface:
+            metadata["cmux_surface"] = surface
 
     try:
         channel = _channel_for_session(session_id)

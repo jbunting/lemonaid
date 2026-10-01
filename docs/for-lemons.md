@@ -127,12 +127,14 @@ snoozed row.
 | `status` | string | `unread`, `read`, or `archived` |
 | `created_at` | float | Unix timestamp |
 | `read_at` | float? | Unix timestamp when marked read |
-| `switch_source` | string? | Switch-source: `tmux`, `wezterm`, or `null` (determines which switch-handler can navigate back) |
+| `switch_source` | string? | Switch-source: `tmux`, `wezterm`, `cmux`, or `null` (determines which switch-handler can navigate back) |
 
 Inside tmux, `metadata` also carries `tmux_session`, `tmux_window`, and `tmux_socket` — where the
 session was running and on which tmux server, so a lost tmux server can be rebuilt from the inbox. All
 are absent when the hook ran outside tmux, and a later observation that can't see tmux does not erase
 them.
+
+Inside cmux, `metadata` carries `cmux_surface`, the surface the session ran in, kept the same way.
 
 ## Restoring a lost tmux layout
 

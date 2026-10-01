@@ -53,7 +53,7 @@ Lemonaid has two parts: **hooks** that fire when your lemons need attention, and
 1. You add hooks to Claude Code, Codex CLI, and/or OpenCode (see [Integrations](#-integrations) below)
 2. When a session stops or needs input, the hook writes a notification to a local SQLite database
 3. The `lma` TUI displays active notifications, watches transcripts for live activity, and auto-archives sessions when they end
-4. When you select an active session, you are taken directly to that pane/tab in `tmux`/WezTerm
+4. When you select an active session, you are taken directly to that pane/tab in `tmux`, WezTerm or cmux
 5. Over time, archived sessions accumulate into a searchable **session history** — press `h` to browse past sessions across all projects and resume them
 
 The TUI doesn't need to be running for notifications to arrive (hooks write directly to the DB), but it does need to run for live activity updates and automatic archiving.
@@ -61,7 +61,7 @@ The TUI doesn't need to be running for notifications to arrive (hooks write dire
 ## Features
 
 - **Notification inbox**: Track which [Claude Code](docs/claude.md), [Codex CLI](docs/codex.md), [OpenClaw](docs/openclaw.md), and [OpenCode](docs/opencode.md) sessions need your attention, and what they're doing as they do it
-- **Terminal integration**: Hit enter to jump directly to the waiting session's pane (supports [`tmux`](docs/tmux.md) and [WezTerm](docs/wezterm.md)). If the session has since died, it is resumed in a new pane in the same directory rather than the jump failing
+- **Terminal integration**: Hit enter to jump directly to the waiting session's pane (supports [`tmux`](docs/tmux.md), [WezTerm](docs/wezterm.md) and [cmux](docs/cmux.md)). If the session has since died, it is resumed in a new pane in the same directory rather than the jump failing
 - **Session history & resume**: Browse archived sessions across all projects, filter by name/cwd/branch, and resume directly or copy the command
 - **[Places](docs/places.md)**: Spin up a directory and its session in one command, and tear both down in one command. What "spin up a directory" means is a shell command you configure per repo, so worktrees (or whatever else you use) stay out of lemonaid's model
 - **Briefs**: `b` on a session shows its identity, `Status:`, what it needs from you, and the rest of `## Now` beside the lemon or in a tmux popup, without switching to it, with the live state of any PR the brief names when `[brief] pr_state` is configured. `lemonaid brief show` prints the same from anywhere. Questions a brief explains under `## Questions` show under what the lemon needs, and `a` answers one or `d` asks for more detail, sent to the lemon's inbox
@@ -190,6 +190,7 @@ Features: idle/permission notifications via plugin hooks, auto-dismiss via sessi
 
 - **`tmux`** (3.0 or later; follow mode needs 3.6): See [docs/tmux.md](docs/tmux.md) for pane switching, back navigation, session templates, and window colors
 - **WezTerm**: See [docs/wezterm.md](docs/wezterm.md) for workspace/pane switching setup
+- **cmux**: Switching to a session's workspace and surface, and resuming a dead one, works with no setup; see [docs/cmux.md](docs/cmux.md) for running `lma` in the Dock
 
 ## Usage
 
@@ -259,6 +260,7 @@ Config file: `~/.config/lemonaid/config.toml` — see [docs/config.md](docs/conf
 - [docs/keybindings.md](docs/keybindings.md) - Customize TUI keybindings
 - [docs/tmux.md](docs/tmux.md) - tmux integration and session templates
 - [docs/wezterm.md](docs/wezterm.md) - WezTerm integration
+- [docs/cmux.md](docs/cmux.md) - cmux integration
 
 ## Architecture
 
@@ -270,3 +272,4 @@ Config file: `~/.config/lemonaid/config.toml` — see [docs/config.md](docs/conf
 - **brief** and **messages**: attached briefs, their popup and sidebar views, and the per-lemon file inboxes behind `lemonaid tell`
 - **places**: per-repo hooks that create and remove directories, and the tmux sessions opened in them
 - **tmux** / **wezterm**: pane switching, the scratch pane and follow mode, session templates
+- **cmux**: switching to a session's workspace and surface

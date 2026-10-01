@@ -1,3 +1,10 @@
+# 0.63.0 (2026-10-02)
+
+#### Added
+
+- **Selecting a session in `lma` switches to its cmux workspace and surface.** A hook run in cmux records the session as `cmux`, with its tty and its cmux surface, and the switch focuses that surface with `cmux focus-panel`. The surface and tty are matched together, so a tty name passed to another surface is not mistaken for the session. The watcher asks cmux once per tick and archives a session in no surface; a cmux that does not answer archives nothing, and is logged once. There is no back navigation yet. See [docs/cmux.md](docs/cmux.md).
+- **A cmux session with no surface on its tty is found or resumed.** After a cmux restart, cmux resumes its agents on new ttys; lemonaid switches to the surface cmux bound the session to, if its agent runs there, and the watcher keeps the session rather than archiving it; selecting it in history brings it back rather than starting a second copy. Otherwise the session is resumed in a new workspace in its directory. A session running on two surfaces is left alone.
+
 # 0.62.1 (2026-10-02)
 
 #### Fixed

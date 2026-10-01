@@ -11,7 +11,7 @@ import time
 from collections import abc
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 from rich.console import Console
 from rich.markup import escape
@@ -28,7 +28,7 @@ from textual.timer import Timer
 from textual.widgets import ContentSwitcher, DataTable, Footer, Header, Input, Static
 from textual.widgets.data_table import RowDoesNotExist, RowKey
 
-from ... import brief, claude, codex, openclaw, opencode
+from ... import brief, claude, codex, handlers, openclaw, opencode
 from ... import resume as resume_mod
 from ...claude import notify, patch_status
 from ...claude.patcher import apply_patch, find_binary
@@ -1033,6 +1033,7 @@ class LemonaidApp(App):
             record_model=self._record_channel_model,
             models=self._recorded_models,
             sockets=self._recorded_sockets,
+            locate_sessions=self._locate_sessions,
             auto_read_patterns=self.config.inbox.auto_read,
             mark_read_after_turn=self._mark_channel_read_after_turn,
             record_turn=self._record_channel_turn if self.config.tui.mid_turn_working else None,
@@ -3034,6 +3035,20 @@ class LemonaidApp(App):
                 for n in db.get_active(conn, switch_source="tmux")
                 if (socket := n.metadata.get("tmux_socket"))
             }
+
+    def _locate_sessions(self, active: list[tuple]) -> dict[str, str | Literal[False] | None]:
+        """Where each active session that can outlive its tty runs now (see handlers)."""
+        channels = {row[0] for row in active if row[7] in handlers.PER_SESSION_SOURCES}
+        if not channels:
+            return {}
+
+        with db.connect() as conn:
+            sessions = [
+                (n.switch_source, {**n.metadata, "channel": n.channel})
+                for n in db.get_active(conn, switch_source=None)
+                if n.channel in channels
+            ]
+        return handlers.where_sessions_are(sessions)
 
     def _recorded_models(self) -> dict[str, ModelInfo]:
         with db.connect() as conn:

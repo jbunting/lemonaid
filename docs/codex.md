@@ -123,7 +123,7 @@ Each line is a JSON entry with `type` and `payload` fields. The watcher reads th
 
 ### Switching to pane doesn't work
 
-1. **Check switch-source**: Codex pane switching is auto-selected from notification `switch_source` (`tmux`/`wezterm`), no `[handlers]` mapping required
+1. **Check switch-source**: Codex pane switching is auto-selected from notification `switch_source` (`tmux`/`wezterm`/`cmux`), no `[handlers]` mapping required
 
 2. **Verify TTY metadata**: The notification needs a `tty` in metadata for pane switching to work
 

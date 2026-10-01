@@ -126,16 +126,27 @@ def _get_ancestor_tty(max_depth: int = _ANCESTOR_DEPTH) -> str | None:
     return None
 
 
+def get_cmux_surface() -> str | None:
+    """The cmux surface this process runs in, recorded beside its tty.
+
+    A tty name can pass to another surface; the pair cannot. See cmux/navigation.py.
+    """
+    return os.environ.get("CMUX_SURFACE_ID") or None
+
+
 def detect_terminal_switch_source() -> str:
     """Detect the switch-source for this terminal environment.
 
     The switch-source determines which switch-handler can navigate
-    back to this terminal. Returns one of: 'tmux', 'wezterm', or 'unknown'.
+    back to this terminal. Returns one of: 'tmux', 'wezterm', 'cmux', or
+    'unknown'. tmux is checked first: tmux run inside cmux is navigated by tmux.
     """
     if os.environ.get("TMUX"):
         return "tmux"
     if os.environ.get("WEZTERM_PANE"):
         return "wezterm"
+    if os.environ.get("CMUX_SURFACE_ID"):
+        return "cmux"
     return "unknown"
 
 

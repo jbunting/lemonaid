@@ -13,7 +13,7 @@ import time
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 from .. import auto_read, tmux
 from ..log import get_logger
@@ -302,6 +302,7 @@ def _archive_stale_sessions(
     sockets: dict[str, str],
     pane_locations: dict[str | None, dict[str, tuple[str, str]] | None],
     codex_directories: set[str] | None = None,
+    located: dict[str, str | Literal[False] | None] | None = None,
 ) -> set[str]:
     """Archive stale sessions based on TTY occupancy and pane existence.
 
@@ -314,6 +315,9 @@ def _archive_stale_sessions(
     server, shared with `_record_locations` so tmux is only asked once per tick.
     `codex_directories` is where every Codex process is working, for the rows
     with no tty that `untracked.gone` can judge; None judges none of them.
+    `located` is, by channel, where a session that can outlive its tty runs now:
+    its current tty, False if it is gone, None if its backend could not tell. A
+    located session is judged on its current tty rather than the recorded one.
 
     Returns set of archived channel names.
     """
@@ -344,9 +348,18 @@ def _archive_stale_sessions(
 
     # First pass: archive any sessions whose panes no longer exist
     remaining = []
+    located = located or {}
     for item in active:
         channel, _session_id, _cwd, _created_at, _is_unread, tty, _db_message, switch_source = item
-        if tty and switch_source == "tmux":
+        if channel in located:
+            now = located[channel]
+            if now is False:
+                archive(item, "pane-gone")
+                continue
+            if now:
+                item = (*item[:5], now, *item[6:])
+
+        elif tty and switch_source == "tmux":
             socket = sockets.get(channel)
             server_panes = pane_locations.get(socket)
             # server_panes is None when the server could not be reached -
@@ -463,6 +476,11 @@ def unified_watch_loop(
     record_model: Callable[[str, str, str], None] | None = None,
     models: Callable[[], dict[str, ModelInfo]] | None = None,
     sockets: Callable[[], dict[str, str]] | None = None,
+    locate_sessions: Callable[
+        [list[tuple[str, str, str, float, bool, str | None, str, str | None]]],
+        dict[str, str | Literal[False] | None],
+    ]
+    | None = None,
     auto_read_patterns: tuple[re.Pattern[str], ...] = (),
     mark_read_after_turn: Callable[[str], int] | None = None,
     record_turn: Callable[[str, float | None], None] | None = None,
@@ -482,6 +500,8 @@ def unified_watch_loop(
         record_model: Optional callback to note a channel's (provider, model)
         models: Optional callback returning the models currently saved by channel
         sockets: Optional callback returning channel -> recorded tmux socket
+        locate_sessions: Optional callback saying where each session that can
+            outlive its tty runs now (see `_archive_stale_sessions`)
         auto_read_patterns: A finished turn whose final message matches one of
             these stays read rather than being marked unread
         mark_read_after_turn: Optional callback recording such a turn on a read channel
@@ -542,6 +562,7 @@ def unified_watch_loop(
                     by_channel,
                     pane_locations,
                     codex_directories,
+                    locate_sessions(active) if locate_sessions else None,
                 )
                 # Remove archived channels from active list
                 active = [s for s in active if s[0] not in archived_channels]
@@ -721,6 +742,11 @@ def start_unified_watcher(
     record_model: Callable[[str, str, str], None] | None = None,
     models: Callable[[], dict[str, ModelInfo]] | None = None,
     sockets: Callable[[], dict[str, str]] | None = None,
+    locate_sessions: Callable[
+        [list[tuple[str, str, str, float, bool, str | None, str, str | None]]],
+        dict[str, str | Literal[False] | None],
+    ]
+    | None = None,
     auto_read_patterns: tuple[re.Pattern[str], ...] = (),
     mark_read_after_turn: Callable[[str], int] | None = None,
     record_turn: Callable[[str, float | None], None] | None = None,
@@ -738,6 +764,8 @@ def start_unified_watcher(
         record_model: Optional callback to note a channel's (provider, model)
         models: Optional callback returning the models currently saved by channel
         sockets: Optional callback returning channel -> recorded tmux socket
+        locate_sessions: Optional callback saying where each session that can
+            outlive its tty runs now (see `_archive_stale_sessions`)
         auto_read_patterns: Final-message patterns that keep a finished turn read
         mark_read_after_turn: Optional callback recording such a turn on a read channel
         record_turn: Optional callback recording a channel's turn in progress
@@ -758,6 +786,7 @@ def start_unified_watcher(
             "record_model": record_model,
             "models": models,
             "sockets": sockets,
+            "locate_sessions": locate_sessions,
             "auto_read_patterns": auto_read_patterns,
             "mark_read_after_turn": mark_read_after_turn,
             "record_turn": record_turn,
