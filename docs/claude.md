@@ -181,16 +181,19 @@ See [claude-patch.md](claude-patch.md) for details.
 ## Session naming
 
 Claude names a conversation itself once it has some content, writing the name
-into the session transcript as `type: "ai-title"` entries (field `aiTitle`). A
-`/rename` is recorded the same way as `customTitle`. Lemonaid reads the
-transcript and prefers, in order:
+into the session transcript as `type: "ai-title"` entries (field `aiTitle`).
+Your `/name` (or an older `/rename`) is recorded as `customTitle` in the
+transcript and as a command in `~/.claude/history.jsonl`. Lemonaid prefers,
+in order:
 
-1. `customTitle` — your own `/rename`
-2. `aiTitle` — Claude's generated conversation title
-3. A `summary` or `firstPrompt` from `sessions-index.json`, for older sessions
-4. The tmux session name, or the working directory name
+1. `customTitle` from the transcript — your own `/name` or `/rename`
+2. The latest `/name` or `/rename` for the session in `history.jsonl`
+3. `aiTitle` from the transcript — Claude's generated conversation title
+4. A `customTitle`, `summary` or `firstPrompt` from `sessions-index.json`, for
+   older sessions
+5. The tmux session name, or the working directory name
 
-None of the first three exist when a session starts, so a new session shows a
+None of the first four exist when a session starts, so a new session shows a
 tmux/cwd placeholder and is renamed in place once Claude assigns a title. The TUI
 re-checks unnamed sessions periodically (on a background thread), so a
 long-running session picks up its real name without needing another hook to fire.

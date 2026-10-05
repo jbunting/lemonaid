@@ -1,3 +1,9 @@
+# 0.70.2 (2026-10-05)
+
+#### Fixed
+
+- **Claude session names set with `/name` are found in `~/.claude/history.jsonl`.** The older `/rename` command still works.
+
 # 0.70.1 (2026-10-05)
 
 #### Fixed

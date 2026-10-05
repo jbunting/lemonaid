@@ -378,3 +378,22 @@ def test_a_reported_transcript_that_is_gone_falls_back_to_the_cwd(tmp_path, monk
     assert notify.get_session_name(_SESSION, cwd) == "From the cwd"
     resolved = notify.resolve_session_name(_SESSION, cwd, str(tmp_path / "missing.jsonl"))
     assert resolved is not None and resolved.name == "From the cwd"
+
+
+def test_a_rename_with_the_name_command_is_found_in_history(tmp_path, monkeypatch):
+    """Claude Code renames a session with `/name`; `/rename` is its older spelling."""
+    cwd = "/Users/x/play/lemonaid"
+    _patch_home(monkeypatch, tmp_path)
+    (tmp_path / ".claude").mkdir(parents=True)
+    (tmp_path / ".claude" / "history.jsonl").write_text(
+        "\n".join(
+            [
+                json.dumps({"sessionId": _SESSION, "display": "/rename older"}),
+                json.dumps({"sessionId": _SESSION, "display": "/name hubspot provider"}),
+                json.dumps({"sessionId": _SESSION, "display": "/named-thing is a prompt"}),
+            ]
+        )
+    )
+
+    resolved = notify.resolve_session_name(_SESSION, cwd)
+    assert resolved == notify.SessionName("hubspot provider", notify.RENAME_SOURCE)

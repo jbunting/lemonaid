@@ -157,8 +157,12 @@ def _transcript_titles(
     return custom_title, ai_title
 
 
+# Claude Code's rename command, under its current name and its older one.
+_RENAME_COMMANDS = ("/name ", "/rename ")
+
+
 def _history_rename(session_id: str) -> str | None:
-    """Find the most recent `/rename` for a session in history.jsonl."""
+    """Find the most recent rename (`/name` or `/rename`) for a session in history.jsonl."""
     history_path = Path.home() / ".claude" / "history.jsonl"
     if not history_path.exists():
         return None
@@ -173,8 +177,9 @@ def _history_rename(session_id: str) -> str | None:
 
             if entry.get("sessionId") == session_id:
                 display = entry.get("display", "")
-                if display.startswith("/rename "):
-                    rename_name = display[8:].strip()
+                for command in _RENAME_COMMANDS:
+                    if display.startswith(command):
+                        rename_name = display[len(command) :].strip()
     except OSError:
         return None
 
