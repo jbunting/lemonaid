@@ -1789,7 +1789,12 @@ class LemonaidApp(App):
     def _scan_session_names(self) -> None:
         with db.connect() as conn:
             candidates = [
-                (n.id, n.metadata.get("session_id", ""), n.metadata.get("cwd", ""))
+                (
+                    n.id,
+                    n.metadata.get("session_id", ""),
+                    n.metadata.get("cwd", ""),
+                    n.metadata.get("transcript_path"),
+                )
                 for n in db.get_active(conn, switch_source=None)
                 if n.channel.startswith("claude:")
                 and n.metadata.get("name_source") not in ("claude_rename", "claude_index")
@@ -1798,8 +1803,8 @@ class LemonaidApp(App):
             ]
 
         upgraded = False
-        for notification_id, session_id, cwd in candidates:
-            transcript = notify.find_transcript(session_id, cwd)
+        for notification_id, session_id, cwd, transcript_path in candidates:
+            transcript = notify.find_transcript(session_id, cwd, transcript_path)
             if not transcript:
                 continue
 
@@ -1816,7 +1821,7 @@ class LemonaidApp(App):
                 continue
 
             self._name_scan_mtimes[cache_key] = mtime
-            resolved = notify.resolve_session_name(session_id, cwd)
+            resolved = notify.resolve_session_name(session_id, cwd, transcript_path)
             if not resolved:
                 continue
 

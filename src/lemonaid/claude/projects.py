@@ -7,6 +7,7 @@ handles the encoding, lookup, and history-based resolution.
 
 import dataclasses
 import json
+import re
 import threading
 from pathlib import Path
 
@@ -20,11 +21,12 @@ _HISTORY_PATH = Path.home() / ".claude" / "history.jsonl"
 def cwd_to_project_dir(cwd: str) -> str:
     """Convert a cwd path to Claude's project directory format.
 
-    /Users/first.last/play/lemonaid -> -Users-first-last-play-lemonaid
+    /Users/first.last/play/_lemonaid -> -Users-first-last-play--lemonaid
 
-    Claude replaces / and . with - in the directory name.
+    Claude replaces every character but a letter or digit with -, so an
+    underscore does not survive any more than a slash or a dot does.
     """
-    project_dir = cwd.replace("/", "-").replace(".", "-")
+    project_dir = re.sub(r"[^A-Za-z0-9]", "-", cwd)
     if project_dir.startswith("-"):
         project_dir = project_dir[1:]
     return "-" + project_dir

@@ -90,8 +90,17 @@ class SessionName(ty.NamedTuple):
     source: str
 
 
-def find_transcript(session_id: str, cwd: str) -> Path | None:
-    """The path to a session's JSONL transcript, if it exists."""
+def find_transcript(session_id: str, cwd: str, transcript_path: str | None = None) -> Path | None:
+    """The path to a session's JSONL transcript, if it exists.
+
+    *transcript_path* is where Claude says the transcript is, and wins. The
+    project directory derived from *cwd* is a guess: Claude files a transcript
+    under the directory the session started in, and the hook's cwd is wherever
+    the session has since moved to.
+    """
+    if transcript_path and Path(transcript_path).exists():
+        return Path(transcript_path)
+
     from .projects import find_project_path, get_project_path
 
     for project_dir in (get_project_path(cwd), find_project_path(cwd)):
@@ -105,7 +114,9 @@ def find_transcript(session_id: str, cwd: str) -> Path | None:
     return None
 
 
-def _transcript_titles(session_id: str, cwd: str) -> tuple[str | None, str | None]:
+def _transcript_titles(
+    session_id: str, cwd: str, transcript_path: str | None = None
+) -> tuple[str | None, str | None]:
     """Read the newest (customTitle, aiTitle) out of a session's transcript.
 
     Current Claude versions record the AI-generated conversation name as
@@ -116,42 +127,33 @@ def _transcript_titles(session_id: str, cwd: str) -> tuple[str | None, str | Non
     sessions-index.json is not consulted here: Claude stopped maintaining it,
     so it only covers sessions from before that change.
     """
-    from .projects import find_project_path, get_project_path
+    transcript = find_transcript(session_id, cwd, transcript_path)
+    if transcript is None:
+        return None, None
 
-    for project_dir in (get_project_path(cwd), find_project_path(cwd)):
-        if project_dir is None:
-            continue
+    ai_title = None
+    custom_title = None
+    try:
+        with open(transcript, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                # Cheap reject before paying for a JSON parse; these fields
+                # appear in a small minority of a large transcript's lines.
+                if "aiTitle" not in line and "customTitle" not in line:
+                    continue
 
-        transcript = project_dir / f"{session_id}.jsonl"
-        if not transcript.exists():
-            continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
 
-        ai_title = None
-        custom_title = None
-        try:
-            with open(transcript, encoding="utf-8", errors="replace") as f:
-                for line in f:
-                    # Cheap reject before paying for a JSON parse; these fields
-                    # appear in a small minority of a large transcript's lines.
-                    if "aiTitle" not in line and "customTitle" not in line:
-                        continue
+                if title := entry.get("aiTitle"):
+                    ai_title = title
+                if title := entry.get("customTitle"):
+                    custom_title = title
+    except OSError:
+        return None, None
 
-                    try:
-                        entry = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-
-                    if title := entry.get("aiTitle"):
-                        ai_title = title
-                    if title := entry.get("customTitle"):
-                        custom_title = title
-        except OSError:
-            continue
-
-        if custom_title or ai_title:
-            return custom_title, ai_title
-
-    return None, None
+    return custom_title, ai_title
 
 
 def _history_rename(session_id: str) -> str | None:
@@ -178,7 +180,9 @@ def _history_rename(session_id: str) -> str | None:
     return rename_name
 
 
-def resolve_session_name(session_id: str, cwd: str) -> SessionName | None:
+def resolve_session_name(
+    session_id: str, cwd: str, transcript_path: str | None = None
+) -> SessionName | None:
     """Find the name Claude holds for a session, and say where it came from.
 
     A `/rename` always wins over the AI-generated title, whenever it happened —
@@ -189,7 +193,7 @@ def resolve_session_name(session_id: str, cwd: str) -> SessionName | None:
     if not session_id or not cwd:
         return None
 
-    custom_title, ai_title = _transcript_titles(session_id, cwd)
+    custom_title, ai_title = _transcript_titles(session_id, cwd, transcript_path)
     if custom_title:
         return SessionName(custom_title, RENAME_SOURCE)
 
@@ -232,7 +236,7 @@ def _resolve_session(data: dict, notification_type: str) -> tuple[str, str, str,
 
     # Claude's own name for the session beats anything we can derive from the
     # environment; the tmux/cwd names are placeholders until it exists.
-    resolved = resolve_session_name(session_id, cwd)
+    resolved = resolve_session_name(session_id, cwd, data.get("transcript_path"))
     name = resolved.name if resolved else (tmux_session or get_name_from_cwd(cwd))
     name_source = resolved.source if resolved else "environment"
 

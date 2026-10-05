@@ -1,3 +1,9 @@
+# 0.68.1 (2026-10-05)
+
+#### Fixed
+
+- **A Claude session is named by Claude's title even after it changes directory, or when its project path has an underscore.** The title is read from the transcript Claude reports to the hook, rather than from a folder guessed from the session's current directory, and that guess now encodes every character but a letter or digit as `-`, as Claude does. Before, such a session showed its current directory's name. The transcript watcher and `summarize` use the corrected folder name too.
+
 # 0.68.0 (2026-10-03)
 
 #### Added

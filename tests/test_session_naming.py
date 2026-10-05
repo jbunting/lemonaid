@@ -326,3 +326,55 @@ def test_register_working_upgrades_name_too():
         )
 
         assert updated.name == "Fix broken notification hook"
+
+
+def test_claude_turns_every_non_alphanumeric_into_a_dash():
+    """An underscore is as gone from the folder name as a slash or a dot."""
+    from lemonaid.claude.projects import cwd_to_project_dir
+
+    assert cwd_to_project_dir("/Users/first.last/play/_lemonaid") == (
+        "-Users-first-last-play--lemonaid"
+    )
+
+
+def test_a_title_is_found_under_a_directory_with_an_underscore(tmp_path, monkeypatch):
+    cwd = "/Users/x/_work/lemonaid"
+    _patch_home(monkeypatch, tmp_path)
+    project = tmp_path / ".claude" / "projects" / "-Users-x--work-lemonaid"
+    project.mkdir(parents=True)
+    (project / f"{_SESSION}.jsonl").write_text(json.dumps({"aiTitle": "Underscored"}))
+
+    assert notify.get_session_name(_SESSION, cwd) == "Underscored"
+
+
+def test_the_transcript_claude_reports_wins_over_the_cwd(tmp_path, monkeypatch):
+    """A session that started in one directory and moved to a sibling of it.
+
+    Claude files the transcript under the directory the session started in;
+    the hook's cwd is wherever the session is now. Neither that directory nor
+    any parent of it is where the session started, so no folder derived from
+    the cwd holds this session.
+    """
+    _patch_home(monkeypatch, tmp_path)
+    started = tmp_path / ".claude" / "projects" / "-Users-x-work-infra"
+    started.mkdir(parents=True)
+    transcript = started / f"{_SESSION}.jsonl"
+    transcript.write_text(json.dumps({"aiTitle": "Where it started"}))
+    moved_to = "/Users/x/work/notes"
+
+    assert notify.get_session_name(_SESSION, moved_to) is None
+    resolved = notify.resolve_session_name(_SESSION, moved_to, str(transcript))
+    assert resolved == notify.SessionName("Where it started", notify.TITLE_SOURCE)
+    assert notify.find_transcript(_SESSION, moved_to, str(transcript)) == transcript
+
+
+def test_a_reported_transcript_that_is_gone_falls_back_to_the_cwd(tmp_path, monkeypatch):
+    cwd = "/Users/x/play/lemonaid"
+    _patch_home(monkeypatch, tmp_path)
+    project = tmp_path / ".claude" / "projects" / "-Users-x-play-lemonaid"
+    project.mkdir(parents=True)
+    (project / f"{_SESSION}.jsonl").write_text(json.dumps({"aiTitle": "From the cwd"}))
+
+    assert notify.get_session_name(_SESSION, cwd) == "From the cwd"
+    resolved = notify.resolve_session_name(_SESSION, cwd, str(tmp_path / "missing.jsonl"))
+    assert resolved is not None and resolved.name == "From the cwd"

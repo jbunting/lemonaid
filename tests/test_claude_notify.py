@@ -223,3 +223,23 @@ def test_a_permission_prompt_does_overwrite(tmp_path, monkeypatch):
             real_db.get_by_channel(conn, "claude:perm1", unread_only=False).message
             == "Permission needed in tmp/project"
         )
+
+
+def test_the_hook_names_a_session_from_the_transcript_it_reports():
+    payload = (
+        '{"session_id":"abc123","cwd":"/tmp/project/notes",'
+        '"transcript_path":"/tmp/claude/abc123.jsonl","hook_event_name":"UserPromptSubmit"}'
+    )
+
+    with (
+        patch("lemonaid.claude.notify.db.connect", _fake_connect),
+        patch("lemonaid.claude.notify.resolve_session_name", return_value=None) as mock_resolve,
+        patch("lemonaid.claude.notify.get_tmux_session_name", return_value=None),
+        patch("lemonaid.claude.notify.get_tty", return_value=None),
+        patch("lemonaid.claude.notify.detect_terminal_switch_source", return_value="unknown"),
+        patch("lemonaid.claude.notify.get_git_branch", return_value=None),
+        patch("lemonaid.claude.notify.db.register_working"),
+    ):
+        notify.handle_submit(stdin_data=payload)
+
+    mock_resolve.assert_called_once_with("abc123", "/tmp/project/notes", "/tmp/claude/abc123.jsonl")
