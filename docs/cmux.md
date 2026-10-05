@@ -1,6 +1,6 @@
 # cmux Integration
 
-Lemonaid switches to the [cmux](https://cmux.com) workspace and surface (tab) where a notification came from, and resumes the session in a new workspace when it has none. There is nothing to configure.
+Lemonaid switches to the [cmux](https://cmux.com) workspace and surface (tab) where a notification came from, and resumes the session in a new workspace when it has none. Switching needs no cmux configuration; [Setup](#setup) covers the hooks lemonaid needs anywhere, and running `lma` in cmux's Dock.
 
 ## How it works
 
@@ -26,9 +26,39 @@ The watcher asks `cmux tree --all` once per tick, with a half-second timeout. St
 
 Lemonaid calls the `cmux` CLI, so it must be on `PATH` and able to reach the cmux socket. Processes started inside cmux can; for anything else, see cmux's socket settings (`cmux docs settings`).
 
-## Where to run `lma`
+## Setup
 
-Run it in the cmux Dock, the right sidebar. cmux keeps a Dock for each window as well as for each workspace, and the window's Dock stays in view whichever workspace is selected. That is the job the [tmux scratch pane and follow mode](tmux.md#scratch-pane) do, so cmux needs neither.
+### 1. Install the harness hooks
+
+Lemonaid knows a session only once one of its hooks has fired, in cmux as anywhere else. Set them up for each harness you run: [Claude Code](claude.md), [Codex](codex.md), [OpenCode](opencode.md). A Claude session that is already running picks up new hooks without a restart, and appears at its next prompt.
+
+### 2. Turn on the Dock
+
+Run `lma` in the cmux Dock, the right sidebar's terminal panel. cmux keeps a Dock for each window as well as for each workspace, and the window's Dock stays in view whichever workspace is selected. That is the job the [tmux scratch pane and follow mode](tmux.md#scratch-pane) do, so cmux needs neither.
+
+Current cmux has the Dock on by default. Some builds (0.64, for one) keep it behind a beta toggle, the Dock switch in the Beta Features section of cmux's Settings. From a shell:
+
+```bash
+defaults write com.cmuxterm.app rightSidebar.beta.dock.enabled -bool true
+```
+
+`cmux.json` cannot set it, and cmux applies it without a restart. While it is off, `cmux new-pane --placement dock` fails with "Dock placement is disabled".
+
+### 3. Start `lma` in the Dock
+
+Show the Dock with the right sidebar's mode switcher, the command palette's "Show Sidebar Dock", or `cmux right-sidebar set dock`. Its New Terminal button, or `cmux new-pane --placement dock`, adds a terminal; run `lma` in it. cmux restores the Dock, `lma` included, when it restarts.
+
+To have every new window's Dock start with `lma`, add a control to `~/.config/cmux/dock.json`:
+
+```json
+{
+  "controls": [
+    { "id": "lma", "title": "lemonaid", "command": "~/.local/bin/lma" }
+  ]
+}
+```
+
+cmux runs a Dock command in a non-interactive login shell, which does not read `~/.zshrc` or `~/.bashrc`, so a bare `lma` is "command not found" unless your login profile puts `uv`'s tool directory (`uv tool dir --bin`) on `PATH`. The file only seeds a Dock with no saved layout, such as a new window's; a Dock you have arranged is restored as you left it.
 
 Run in cmux, `lma` shows only the notifications from cmux, plus headless ones, as it does for tmux and WezTerm.
 

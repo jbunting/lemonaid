@@ -201,7 +201,7 @@ Features: idle/permission notifications via plugin hooks, auto-dismiss via sessi
 
 - **`tmux`** (3.0 or later; follow mode needs 3.6): See [docs/tmux.md](docs/tmux.md) for pane switching, back navigation, session templates, and window colors
 - **WezTerm**: See [docs/wezterm.md](docs/wezterm.md) for workspace/pane switching setup
-- **cmux**: Switching to a session's workspace and surface, and resuming a dead one, works with no setup; see [docs/cmux.md](docs/cmux.md) for running `lma` in the Dock
+- **cmux**: Switching to a session's workspace and surface, and resuming a dead one, needs no cmux configuration; see [docs/cmux.md](docs/cmux.md#setup) for the hooks and for running `lma` in the Dock
 
 ## Usage
 
