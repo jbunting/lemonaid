@@ -8,6 +8,7 @@ from rich.style import Style
 from ...brief import now as brief_now
 from ...brief import status as brief_status
 from .. import turns
+from . import utils
 from .utils import ATTENTION_COLOR
 
 MERGE_COLOR = "#4fb35a"
@@ -17,6 +18,14 @@ APPROVE_COLOR = "#7e57c2"
 RUNNING_COLOR = "#00838f"
 # The running process named on a card, lighter than the headline fill so it reads on the plain background.
 RUNNING_TEXT_COLOR = "#4fc3cc"
+RUNNING_TEXT_COLOR_LIGHT = "#00707a"
+
+
+def running_text() -> str:
+    """The running process's colour as text, for the theme the app is drawing."""
+    return RUNNING_TEXT_COLOR_LIGHT if utils.light_theme() else RUNNING_TEXT_COLOR
+
+
 # Headline colours for the statuses that want a look: an alert lemon needs you
 # urgently, a blocked one waits on you, a merge one waits only on your merge, an
 # approve one waits only on your approval of a teammate's PR, a review one waits

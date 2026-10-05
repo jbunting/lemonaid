@@ -459,7 +459,7 @@ def test_building_a_card_does_not_mutate_column_layout_justification():
 
 def test_the_marker_does_not_share_the_name_colour():
     """Sharing it made the dot read as the first glyph of the name."""
-    assert f"bold {FIELD_STYLES['name']}" != app.UNREAD_MARKER_STYLE
+    assert f"bold {FIELD_STYLES['name']}" != app.utils.unread_marker_style()
 
 
 def test_a_long_message_uses_every_line_it_is_given():

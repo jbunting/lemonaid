@@ -31,6 +31,23 @@ _STATE_STYLES = {
     "working": "bold",
     "waiting": "bright_black",
 }
+# The same status words on a light theme's background, each at 4.5:1 or better.
+_STATE_STYLES_LIGHT = {
+    **_STATE_STYLES,
+    "alert": f"bold {brief_cards.ALERT_COLOR}",
+    "blocked": f"bold {utils.ATTENTION_TEXT_LIGHT}",
+    "merge": "bold #2e7d32",
+    "approve": "bold #5e35b1",
+    "review": f"bold {brief_cards.REVIEW_COLOR}",
+    "running": f"bold {brief_cards.RUNNING_TEXT_COLOR_LIGHT}",
+    "done": "bold #285995",
+}
+
+
+def _state_style(state: str, default: str = "") -> str:
+    return (_STATE_STYLES_LIGHT if utils.light_theme() else _STATE_STYLES).get(state, default)
+
+
 _PR_STYLES = {"open": "green", "draft": "bright_black", "merged": "magenta", "closed": "red"}
 _SESSION_BAR = f"bold #000000 on {utils.ATTENTION_COLOR}"
 
@@ -52,7 +69,7 @@ def _headline(section: render.Section, width: int, unread: bool) -> Text:
         if lemon
         else "",
     )
-    left = (Text("● ", style=utils.UNREAD_MARKER_STYLE) if unread else Text("")) + Text(
+    left = (Text("● ", style=utils.unread_marker_style()) if unread else Text("")) + Text(
         name, style=f"bold {utils.FIELD_STYLES['name']}"
     )
     left.truncate(max(1, width - model.cell_len - 1), overflow="ellipsis")
@@ -94,9 +111,7 @@ def _state_line(section: render.Section, now_seconds: float) -> Text:
             (
                 Text(section.held, style="dim")
                 if section.held
-                else Text(
-                    render.status_text(section), style=_STATE_STYLES.get(section.state, "dim")
-                )
+                else Text(render.status_text(section), style=_state_style(section.state, "dim"))
             ),
             *(
                 [Text(f"updated {status.age(now_seconds - section.mtime)}", style="dim")]
@@ -142,7 +157,7 @@ def children(section: render.Section) -> Text:
             *(
                 Text.assemble(
                     "  ",
-                    (state or "-", _STATE_STYLES.get(state, "dim")),
+                    (state or "-", _state_style(state, "dim")),
                     " " * (width - len(state or "-") + 2),
                     name,
                 )

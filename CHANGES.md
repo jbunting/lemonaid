@@ -1,3 +1,9 @@
+# 0.71.1 (2026-10-05)
+
+#### Fixed
+
+- **lemonaid's own text colours stay readable on a light Textual theme.** What a lemon needs from you, the unread dot, a running process, a brief's status word and its links and quoted needs were pale colours chosen for a dark background, about 2:1 against white. Under a light theme they take darker versions, each at 4.5:1 or better; a dark theme looks as before. Filled headlines and bars keep their colours, which read on either.
+
 # 0.71.0 (2026-10-05)
 
 #### Added

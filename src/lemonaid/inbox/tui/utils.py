@@ -53,9 +53,38 @@ FIELD_STYLES = {
 # A soft lemon rather than warning red: unread means "ready for you", not an
 # error. One value feeds both the marker and the table's attention bar.
 ATTENTION_COLOR = "#e3cf65"
-UNREAD_MARKER_STYLE = f"bold {ATTENTION_COLOR}"
 # Links in a brief: a sky blue, lighter than the blue that marks a directory.
 LINK_COLOR = "#6cb6ff"
+
+# The colours above are text colours chosen for a dark background, where they
+# read at 10:1 or better; on a light one they fall to 2:1 or less. Text takes
+# these darker ones under a light theme instead. A fill, a colour behind black
+# or white text, reads on either and keeps its colour.
+ATTENTION_TEXT_LIGHT = "#8a6d00"
+LINK_COLOR_LIGHT = "#1f62b8"
+
+_light_theme = False
+
+
+def use_light_theme(light: bool) -> None:
+    """Draw text for a light theme's background, or a dark one's. Set by the app from its theme."""
+    global _light_theme
+    _light_theme = light
+
+
+def light_theme() -> bool:
+    return _light_theme
+
+
+def attention_text() -> str:
+    """The attention colour as text on the plain background."""
+    return ATTENTION_TEXT_LIGHT if _light_theme else ATTENTION_COLOR
+
+
+def unread_marker_style() -> str:
+    """The unread dot, and what a lemon needs from you, on the plain background."""
+    return f"bold {attention_text()}"
+
 
 # Fields that stay plain even when a row is demanding attention.
 _NEVER_BOLD = frozenset({"message"})

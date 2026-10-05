@@ -8,6 +8,7 @@ from textual.screen import ModalScreen
 
 from ...brief import pr, target
 from ...config import Config
+from . import utils
 from .brief_view import BriefView
 
 
@@ -39,7 +40,11 @@ class BriefPopup(App[None]):
             self._config.places.roots,
         )
 
+    def watch_theme(self, theme: str) -> None:
+        utils.use_light_theme(not self.current_theme.dark)
+
     def on_mount(self) -> None:
+        utils.use_light_theme(not self.current_theme.dark)
         if self._config.tui.transparent:
             self.screen.styles.background = "transparent"
         view = self.query_one(BriefView)

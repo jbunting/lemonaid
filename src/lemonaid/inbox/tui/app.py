@@ -58,7 +58,7 @@ from ...tmux.scratch import (
 from ...tmux.session import spawn_session
 from .. import db, emoji, order, pins, unarchive, undo, view
 from ..arrange import answer, child
-from . import backend_indicators, brief_cards, brief_rows, card_context
+from . import backend_indicators, brief_cards, brief_rows, card_context, utils
 from .brief_view import BriefView
 from .error_screen import ErrorScreen
 from .help_screen import HelpScreen
@@ -72,7 +72,6 @@ from .utils import (
     HERE_BLOCK,
     JUMP_DIGITS,
     PIN_MARK,
-    UNREAD_MARKER_STYLE,
     backend_cell,
     jump_gutter,
     same_cell,
@@ -271,7 +270,7 @@ def _as_card(
     # bold empty placeholder still emits the attribute - which the name that
     # follows then inherits, since a colour change does not clear it.
     marker = cells[_UNREAD_CELL]
-    dot = Text("●", style=UNREAD_MARKER_STYLE) if marker.plain else Text(" ")
+    dot = Text("●", style=utils.unread_marker_style()) if marker.plain else Text(" ")
 
     # The first cell is one stable navigation slot: a jump digit until this is
     # the current session, then the green bar. Read titles start in the fourth
@@ -369,7 +368,7 @@ def _as_card(
             )
         if marker.plain:
             headline.stylize(
-                brief_cards.DOT_STYLES.get(card_brief.shown, UNREAD_MARKER_STYLE),
+                brief_cards.DOT_STYLES.get(card_brief.shown, utils.unread_marker_style()),
                 2,
                 3,
             )
@@ -379,13 +378,13 @@ def _as_card(
     brief_lines = (
         [
             *(
-                [Text(card_brief.needs_line, style=UNREAD_MARKER_STYLE)]
+                [Text(card_brief.needs_line, style=utils.unread_marker_style())]
                 if card_brief.needs_line
                 else []
             ),
             *([] if age_inline else [Text(card_brief.age(now, stale_hours), style="dim")]),
             *(
-                [Text(card_brief.running_line, style=brief_cards.RUNNING_TEXT_COLOR)]
+                [Text(card_brief.running_line, style=brief_cards.running_text())]
                 if card_brief.running_line
                 else []
             ),
@@ -989,9 +988,14 @@ class LemonaidApp(App):
             )
         yield Footer()
 
+    def watch_theme(self, theme: str) -> None:
+        # Text colours follow the theme's background; the next refresh redraws them.
+        utils.use_light_theme(not self.current_theme.dark)
+
     def on_mount(self) -> None:
         self.title = "lemonaid"
         self.sub_title = "attention inbox"
+        utils.use_light_theme(not self.current_theme.dark)
         # Apply transparent styles if configured
         if self.config.tui.transparent:
             self.screen.styles.background = "transparent"
@@ -1405,7 +1409,7 @@ class LemonaidApp(App):
         is_here = n.metadata.get("tty", "") in focused
         return str(n.id), [
             _time_cell(n.created_at, is_unread),
-            Text("●", style=UNREAD_MARKER_STYLE) if is_unread else Text(""),
+            Text("●", style=utils.unread_marker_style()) if is_unread else Text(""),
             backend_cell(
                 self._backend_value(n, is_unread),
                 n.channel in pinned,

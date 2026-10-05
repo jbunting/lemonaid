@@ -181,6 +181,17 @@ class BriefView(VerticalScroll):
         color: {utils.ATTENTION_COLOR};
         margin: 0 0 1 0;
     }}
+    /* Darker text on a light theme. :light also outranks Markdown's own light
+       rule for the quote. Before the mid-turn rule, which has the same
+       specificity and must still win. */
+    BriefView MarkdownBlock:light {{
+        link-color: {utils.LINK_COLOR_LIGHT};
+        link-color-hover: {utils.LINK_COLOR_LIGHT};
+    }}
+    BriefView MarkdownBlockQuote:light {{
+        border-left: outer {utils.ATTENTION_TEXT_LIGHT};
+        color: {utils.ATTENTION_TEXT_LIGHT};
+    }}
     BriefView .brief-needs-mid-turn MarkdownBlockQuote {{
         border-left: outer $foreground 30%;
         color: $text-muted;
