@@ -22,7 +22,8 @@ character, or leading dot.
 
 `lemonaid brief id --self --reroll` gives a lemon a new random WordyBin, keeping the slug;
 `--set QuickOdd` picks one (any two-word WordyBin, in any case). It refuses a WordyBin
-another lemon has, or had. Everything recorded against the old ID moves to the new one:
+another lemon has, or had. With `[brief] name` set, `--reroll` asks that command for the
+new name and `--set` takes any name of letters, digits, `_` and `-`. Everything recorded against the old ID moves to the new one:
 
 - the brief's `Lemon-ID:` line;
 - the inbox folder, with its pending messages and `done/`;

@@ -5,15 +5,12 @@ only a forward, so a message addressed to it still reaches the lemon.
 """
 
 import dataclasses
-import os
 import re
 import sqlite3
 from pathlib import Path
 
-import wordybin
-
 from .. import home, messages
-from . import identity, store
+from . import identity, names, store
 
 _ATTEMPTS = 20
 _LINE = re.compile(r"^(?:Brief-ID|Lemon-ID): .*$", re.MULTILINE)
@@ -23,15 +20,6 @@ _LINE = re.compile(r"^(?:Brief-ID|Lemon-ID): .*$", re.MULTILINE)
 class Rerolled:
     old_id: str
     new_id: str
-
-
-def _word(chosen: str) -> str:
-    """*chosen* spelled as WordyBin spells two bytes; raises ValueError otherwise."""
-    decoded = wordybin.decode(chosen)
-    if len(decoded) != 2:
-        raise ValueError(f"{chosen!r} is not a two-word WordyBin")
-
-    return wordybin.encode(decoded)
 
 
 def _taken(conn: sqlite3.Connection, lemon_id: str) -> bool:
@@ -46,7 +34,7 @@ def _taken(conn: sqlite3.Connection, lemon_id: str) -> bool:
 def _new_id(conn: sqlite3.Connection, path: Path, old_id: str, chosen: str) -> str:
     slug = old_id.rsplit(".", 1)[0] if "." in old_id else store.lemon_id_slug(path)
     if chosen:
-        new_id = f"{slug}.{_word(chosen)}"
+        new_id = f"{slug}.{names.chosen(chosen)}"
         if new_id == old_id:
             raise ValueError(f"{old_id} already has that WordyBin")
 
@@ -56,7 +44,7 @@ def _new_id(conn: sqlite3.Connection, path: Path, old_id: str, chosen: str) -> s
         return new_id
 
     for _ in range(_ATTEMPTS):
-        new_id = f"{slug}.{wordybin.encode(os.urandom(2))}"
+        new_id = f"{slug}.{names.new()}"
         if new_id != old_id and not _taken(conn, new_id):
             return new_id
 

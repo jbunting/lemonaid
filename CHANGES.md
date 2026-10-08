@@ -1,3 +1,9 @@
+# 0.85.0 (2026-10-08)
+
+#### Added
+
+- **`[brief] name` names new lemons with a shell command instead of a WordyBin.** `brief id --reroll` asks it too, and `--set` then takes any name of letters, digits, `_` and `-`.
+
 # 0.84.0 (2026-10-07)
 
 #### Added

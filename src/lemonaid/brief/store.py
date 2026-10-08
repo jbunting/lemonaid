@@ -16,9 +16,8 @@ import tempfile
 from collections import abc
 from pathlib import Path
 
-import wordybin
-
 from .. import home
+from . import names
 
 STATES = ("working", "running", "waiting", "done", "blocked", "merge", "approve", "alert", "review")
 
@@ -90,8 +89,8 @@ def lemon_id_slug(path: Path) -> str:
 
 
 def new_lemon_id(path: Path) -> str:
-    """Give a brief a short name plus a random, two-byte WordyBin suffix."""
-    return f"{lemon_id_slug(path)}.{wordybin.encode(os.urandom(2))}"
+    """Give a brief a short name plus a new name from `names`: by default a random WordyBin."""
+    return f"{lemon_id_slug(path)}.{names.new()}"
 
 
 def create_named(name: str, today: datetime.date, text: abc.Callable[[Path], str]) -> Path:
@@ -100,8 +99,9 @@ def create_named(name: str, today: datetime.date, text: abc.Callable[[Path], str
         directory = briefs_dir()
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / f"{today.isoformat()}-{name}.md"
+        content = text(path)  # a failure here leaves no empty file
         with path.open("x") as f:
-            f.write(text(path))
+            f.write(content)
 
     return path.resolve()
 

@@ -314,6 +314,7 @@ See [keybindings.md](keybindings.md) for the other keys and conflict warnings.
 |-----|---------|-------------|
 | `pr_state` | `""` | Shell command that prints a PR's state for `{ref}`; unset shows PR numbers without a state. |
 | `pr_url` | `""` | Shell command that prints a PR's URL for `{ref}`, so `brief pr add` takes a number; unset, it needs the URL. |
+| `name` | `""` | Shell command that prints a new lemon's name; unset uses a random two-word WordyBin. |
 | `vaults` | `[]` | Obsidian vault directories; a bare `.md` path under one opens in Obsidian. |
 
 The brief popup and sidebar run `pr_state` for each `PR #N` or pull-request URL
@@ -338,6 +339,19 @@ number, and the first word printed must be a pull-request URL. With `gh`:
 ```toml
 [brief]
 pr_url = "gh pr view {ref} --json url --jq .url"
+```
+
+`name` names new lemons: the part of a Lemon-ID after the dot, and the name a
+lemon signs with. It runs in the caller's directory each time lemonaid needs a
+name, including again when the one printed belongs to another lemon, so it
+should print a different name each run. The first word printed is the name; it
+must be letters, digits, `_` and `-` only. A non-zero exit, nothing printed,
+another character, or more than 5 seconds stops the brief from being created.
+With `name` set, `brief id --set` takes any such name as written.
+
+```toml
+[brief]
+name = "shuf -n1 ~/.config/lemonaid/names.txt"
 ```
 
 `vaults` lists Obsidian vault directories. A bare path to a `.md` file under one,

@@ -47,7 +47,10 @@ def _create(args: argparse.Namespace, today: datetime.date) -> tuple[Path, str, 
 
     title = args.title.strip()
     name = store.slug(args.slug or title)
-    planned = store.new_lemon_id(store.briefs_dir() / f"{today.isoformat()}-{name}.md")
+    try:
+        planned = store.new_lemon_id(store.briefs_dir() / f"{today.isoformat()}-{name}.md")
+    except ValueError as e:
+        raise child.Problem(str(e)) from None
     area = args.area.strip()
     text = child.render(body, title, planned, parent, today, values, area)  # fails before any file
     try:

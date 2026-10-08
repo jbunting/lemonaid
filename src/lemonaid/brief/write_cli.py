@@ -107,6 +107,9 @@ def _cmd_new(args: argparse.Namespace) -> None:
     except FileExistsError as e:
         command.finish(args, {}, f"{e.filename} already exists; attach it instead")
         return
+    except ValueError as e:
+        command.finish(args, {}, str(e))
+        return
 
     try:
         with db.connect() as conn:

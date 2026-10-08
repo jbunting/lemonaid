@@ -635,7 +635,8 @@ process; name it and its tmux `session:window` under `Running`, whose first line
 New briefs include a readable slug and WordyBin suffix, such as
 `Lemon-ID: mc-tars-no-mops-leases.SkullHen`, generated from the brief filename
 and two random bytes. The slug omits the leading date and is trimmed to about
-40 characters at a hyphen boundary.
+40 characters at a hyphen boundary. `[brief] name` in the config replaces the
+WordyBin with whatever a command prints; see `docs/config.md`.
 Attaching or messaging an existing brief adds the line if it is missing. The ID names its
 message inbox and stays with the brief when its filename or attached channel changes.
 `brief id` also backfills an existing attached brief.

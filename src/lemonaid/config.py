@@ -189,6 +189,9 @@ class BriefConfig:
     # Shell command printing a PR's URL for `{ref}`, a PR number, run in the
     # caller's directory. Lets `brief pr add` take a number instead of a URL.
     pr_url: str = ""
+    # Shell command printing a new lemon's name, the part of its Lemon-ID after
+    # the dot. Unset names it with a random two-word WordyBin.
+    name: str = ""
     # Obsidian vault roots, expanded. A bare `.md` path under one becomes an
     # `obsidian://` link.
     vaults: tuple[Path, ...] = ()
@@ -523,6 +526,7 @@ def _parse_config(data: dict[str, Any]) -> Config:
     brief = BriefConfig(
         pr_state=brief_data.get("pr_state", ""),
         pr_url=brief_data.get("pr_url", ""),
+        name=brief_data.get("name", ""),
         vaults=_vaults(brief_data.get("vaults")),
     )
 
