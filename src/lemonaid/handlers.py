@@ -97,7 +97,7 @@ def _handle_cmux(metadata: dict[str, Any] | None, config: Config) -> bool:
         return False
 
     try:
-        target = cmux.navigation.locate(metadata, _cmux_runs_harness)
+        target = locate_cmux(metadata)
     except cmux.navigation.CmuxUnavailable:
         return False
 
@@ -117,6 +117,11 @@ def _handle_cmux(metadata: dict[str, Any] | None, config: Config) -> bool:
         return cmux.recreate.recreate(metadata, config)
 
     return cmux.navigation.switch_to_surface(target)
+
+
+def locate_cmux(metadata: dict[str, Any]) -> cmux.navigation.Surface | str | None:
+    """The cmux surface the session in *metadata* runs in; see `cmux.navigation.locate`."""
+    return cmux.navigation.locate(metadata, _cmux_runs_harness)
 
 
 def _cmux_runs_harness(metadata: dict[str, Any], tty: str) -> bool | None:

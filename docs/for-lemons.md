@@ -1054,7 +1054,7 @@ user adds their conventions in:
 
 ## Direct lemon links
 
-Run `lemonaid go <Lemon-ID | channel>` to switch to a lemon's recorded tmux pane. `lemonaid go <target> --link` prints an OSC 8 hyperlink to `lemonaid://go/<target>` without jumping. In Markdown, use `[go to the lemon](lemonaid://go/<Lemon-ID>)`. A registered URL handler is required for clicks; see [Jump to a lemon](go.md) for macOS setup and the client-selection rule. `--client NAME` chooses an exact attached tmux client when several are available.
+Run `lemonaid go <Lemon-ID | channel>` to switch to a lemon's recorded tmux pane or cmux surface; it never resumes a lemon. `lemonaid go <target> --link` prints an OSC 8 hyperlink to `lemonaid://go/<target>` without jumping. In Markdown, use `[go to the lemon](lemonaid://go/<Lemon-ID>)`. A registered URL handler is required for clicks; see [Jump to a lemon](go.md) for macOS setup and the client-selection rule. `--client NAME` chooses an exact attached tmux client when several are available.
 
 ## Watch everything in your attached brief
 

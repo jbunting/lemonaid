@@ -1,4 +1,4 @@
-"""Direct links to a lemon's recorded tmux pane."""
+"""Direct links to a lemon's recorded tmux pane or cmux surface."""
 
 import argparse
 import os
@@ -8,6 +8,7 @@ import subprocess
 import sys
 from urllib.parse import quote, unquote, urlsplit
 
+from . import cmux, handlers
 from .brief import lemon, store
 from .inbox import db
 from .tmux import navigation
@@ -105,6 +106,23 @@ def _client(command: list[str], explicit: str, source_pane: str) -> str:
     return rows[0][0]
 
 
+def _jump_cmux(found: db.Notification) -> None:
+    """Focus the surface the inbox would switch to, but never resume a lemon that has none."""
+    try:
+        surface = handlers.locate_cmux(found.metadata)
+    except cmux.navigation.CmuxUnavailable as error:
+        raise LookupError("cmux did not answer; no jump made") from error
+
+    if surface is None:
+        raise LookupError("The lemon has no cmux surface; resume it from the inbox")
+    if surface == cmux.navigation.AMBIGUOUS:
+        raise LookupError("Several cmux surfaces run this lemon; no jump made")
+    if surface == cmux.navigation.UNKNOWN:
+        raise LookupError("Could not tell which cmux surface runs this lemon; no jump made")
+    if not cmux.navigation.switch_to_surface(surface):
+        raise LookupError("cmux did not focus the lemon's surface")
+
+
 def _cmd_go(args: argparse.Namespace) -> None:
     try:
         target = _target(args.target)
@@ -115,8 +133,13 @@ def _cmd_go(args: argparse.Namespace) -> None:
 
         with db.connect() as conn:
             found = _notification(conn, target)
+        if found.switch_source == "cmux":
+            if args.client:
+                raise ValueError("--client names a tmux client; this lemon runs in cmux")
+            _jump_cmux(found)
+            return
         if found.switch_source != "tmux":
-            raise ValueError("lemonaid go currently supports tmux lemons only")
+            raise ValueError("lemonaid go supports tmux and cmux lemons only")
 
         socket = found.metadata.get("tmux_socket")
         command = navigation.server_args(socket)

@@ -1,6 +1,7 @@
 # Jump to a lemon
 
-`lemonaid go` switches an attached tmux client to the pane recorded for a lemon:
+`lemonaid go` switches to a lemon: an attached tmux client to the lemon's
+recorded pane, or cmux to the lemon's surface:
 
 ```bash
 lemonaid go lemonaid-go.OzoneYes
@@ -23,25 +24,31 @@ URL handler below. `lemonaid brief show` prints plain text and is unchanged.
 A Lemon-ID follows its attached brief and supports rerolled ID aliases. A channel
 also works without a brief. Row order, folding, read state and snoozing do not
 change the target. Jumping leaves the inbox state alone. An archived row, a
-missing pane, or a non-tmux lemon produces an error; this command does not resume
-or start a lemon. Hooks record pane IDs scoped to the tmux server lifetime;
-existing sessions need a notification from the updated hooks before their first
-jump. A record without that pane identity fails closed.
+missing pane or surface, or a lemon in another terminal produces an error; this
+command does not resume or start a lemon. Hooks record pane IDs scoped to the tmux
+server lifetime; existing sessions need a notification from the updated hooks
+before their first jump. A record without that pane identity fails closed.
 
 After a jump, you can return to the sender by clicking its inbox row or selecting
 it and pressing Enter. The inbox cursor may still be on the sender; the green
 bar follows the terminal currently on screen. If older rows share that terminal's
 TTY, only its latest notification gets the bar.
 
+## cmux
+
+A cmux lemon's surface is found by the same rule the inbox uses on Enter (see
+[cmux](cmux.md)), and cmux focuses it, bringing its workspace forward. Where the
+inbox would resume a lemon that has no surface, `lemonaid go` refuses: a stray
+click shouldn't start a session. It also refuses when several surfaces run the
+lemon, or when it can't tell which one does. `--client` is for tmux only.
+
 ## Future terminal support
 
-This command currently supports tmux. cmux, WezTerm and pluggable terminal
-backends are possible future extensions: links identify lemons rather than
-terminals, so existing links could keep working when another backend is added.
-See [Lemon links across terminals](../thoughts.md#lemon-links-across-terminals)
-in the feature ideas for the proposed direction.
+WezTerm and pluggable terminal backends are possible future extensions: links
+identify lemons rather than terminals, so existing links keep working when
+another backend is added.
 
-## Which client moves
+## Which tmux client moves
 
 The recorded tmux socket selects the server. From a pane on that server, the
 command chooses the sole client viewing any session containing the caller's
@@ -120,3 +127,21 @@ The handler passes the URL as one quoted argument; it does not run URL text as
 shell code. The CLI validates the scheme, destination and target before switching.
 Other terminal emulators can open the same scheme through this macOS handler if
 they support OSC 8. No WezTerm-specific rule is installed by this release.
+
+## cmux on macOS
+
+cmux renders OSC 8 links itself, so it needs no terminal setting. Build the
+handler app as in the iTerm2 steps above, with two changes to the script:
+put cmux's CLI directory on PATH, and bring cmux to the front for links clicked
+in other apps, such as Obsidian or a browser.
+
+```applescript
+on open location jumpURL
+    try
+        do shell script "PATH=/Applications/cmux.app/Contents/Resources/bin:/usr/bin:/bin " & quoted form of "/Users/YOU/.local/bin/lemonaid" & " go " & quoted form of jumpURL
+        tell application id "com.cmuxterm.app" to activate
+    on error messageText
+        display alert "Lemonaid jump failed" message messageText
+    end try
+end open location
+```
