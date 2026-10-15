@@ -346,6 +346,37 @@ def _cli(tmp_path, *args):
     )
 
 
+def test_a_gh_timeout_is_retried_on_the_next_poll(stem, fake_gh, monkeypatch):
+    _write_snapshot(fake_gh, "b" * 40)
+    run, calls = subprocess.run, []
+
+    def slow_once(argv, **kwargs):
+        calls.append(argv)
+        if len(calls) == 1:
+            raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
+        return run(argv, **kwargs)
+
+    monkeypatch.setattr(pr_activity.subprocess, "run", slow_once)
+    _seen_nothing(stem)
+    sent = []
+    pr_wait.wait(
+        lambda: pr_activity.fetch("o/r", 90, ()), 90, 0, _HEAD, False, sent.append, True, stem
+    )
+
+    assert len(calls) == 2
+    assert sent == [f"PR #90 head moved {'a' * 10} -> {'b' * 10}"]
+
+
+def test_a_missing_gh_still_ends_the_wait(monkeypatch):
+    def missing(argv, **kwargs):
+        raise FileNotFoundError(argv[0])
+
+    monkeypatch.setattr(pr_activity.subprocess, "run", missing)
+
+    with pytest.raises(FileNotFoundError):
+        pr_activity.fetch("o/r", 90, ())
+
+
 def test_cli_once_reports_a_push_and_exits(tmp_path, fake_gh):
     _write_snapshot(fake_gh, "b" * 40)
 

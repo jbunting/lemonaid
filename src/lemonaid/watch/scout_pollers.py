@@ -1,6 +1,5 @@
 """Open each subscription's existing cursor-aware change detector."""
 
-import subprocess
 import time
 from collections import abc
 from pathlib import Path
@@ -146,16 +145,13 @@ def open_poller(
         nonlocal head, closed
         if closed:
             return
-        try:
-            snapshot = pr_activity.fetch(
-                repo,
-                int(number),
-                (spec.me, *spec.legacy, *signatures),
-                skip_outdated=spec.skip_outdated,
-                skip_resolved=spec.skip_resolved,
-            )
-        except subprocess.TimeoutExpired:
-            snapshot = None
+        snapshot = pr_activity.fetch(
+            repo,
+            int(number),
+            (spec.me, *spec.legacy, *signatures),
+            skip_outdated=spec.skip_outdated,
+            skip_resolved=spec.skip_resolved,
+        )
         if snapshot is None:
             _log.warning("Cannot reach GitHub for %s#%s", repo, number)
             failure_state.report(

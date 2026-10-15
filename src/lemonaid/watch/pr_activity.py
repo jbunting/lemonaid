@@ -105,26 +105,30 @@ def _contexts(commit: dict) -> dict:
 
 def _repository(repo: str, number: int, query: str, after: str, oid: str) -> dict | None:
     owner, _, name = repo.partition("/")
-    r = subprocess.run(
-        [
-            "gh",
-            "api",
-            "graphql",
-            "-F",
-            f"owner={owner}",
-            "-F",
-            f"name={name}",
-            "-F",
-            f"number={number}",
-            *(["-f", f"after={after}"] if after else []),
-            *(["-f", f"oid={oid}"] if oid else []),
-            "-f",
-            f"query={query}",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    try:
+        r = subprocess.run(
+            [
+                "gh",
+                "api",
+                "graphql",
+                "-F",
+                f"owner={owner}",
+                "-F",
+                f"name={name}",
+                "-F",
+                f"number={number}",
+                *(["-f", f"after={after}"] if after else []),
+                *(["-f", f"oid={oid}"] if oid else []),
+                "-f",
+                f"query={query}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        return None
+
     if r.returncode != 0:
         return None
 
